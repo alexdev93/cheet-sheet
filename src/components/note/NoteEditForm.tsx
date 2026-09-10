@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { NOTE_TYPE_LABELS } from "@/lib/detect";
 import { createNoteAction, updateNoteAction } from "@/server/actions";
 import { AttachmentManager } from "@/components/note/AttachmentManager";
+import { Combobox } from "@/components/ui/Combobox";
 import { MarkdownField } from "@/components/ui/MarkdownField";
 import type { NoteInput, SectionInput } from "@/lib/validation";
 import type { NoteDetail } from "@/types/note";
@@ -165,28 +166,18 @@ export function NoteEditForm({
           </select>
         </Field>
         <Field label="Domain">
-          <input
+          <Combobox
             value={domain}
-            onChange={(e) => {
-              setDomain(e.target.value);
+            onChange={(v) => {
+              setDomain(v);
               setCollection("");
             }}
-            list="domain-options"
+            options={domainOptions.map((d) => d.name)}
             className={inputClass}
           />
-          <datalist id="domain-options">
-            {domainOptions.map((d) => (
-              <option key={d.name} value={d.name} />
-            ))}
-          </datalist>
         </Field>
         <Field label="Collection">
-          <input value={collection} onChange={(e) => setCollection(e.target.value)} list="collection-options" className={inputClass} />
-          <datalist id="collection-options">
-            {collectionsForDomain.map((c) => (
-              <option key={c.name} value={c.name} />
-            ))}
-          </datalist>
+          <Combobox value={collection} onChange={setCollection} options={collectionsForDomain.map((c) => c.name)} className={inputClass} />
         </Field>
       </div>
 

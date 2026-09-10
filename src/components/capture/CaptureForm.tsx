@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { detectNoteType, NOTE_TYPE_LABELS } from "@/lib/detect";
 import { quickCaptureAction } from "@/server/actions";
+import { Combobox } from "@/components/ui/Combobox";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import type { NoteType } from "@/generated/prisma/client";
 
@@ -137,36 +138,26 @@ export function CaptureForm({
         <div>
           <div className="font-sans font-bold text-[10px] tracking-[0.12em] text-[var(--color-text-3)] mb-2.5">FILE IT (OPTIONAL)</div>
           <div className="flex gap-2 mb-2.5">
-            <input
+            <Combobox
               name="domainName"
-              list="domain-options"
               value={domain}
-              onChange={(e) => {
-                setDomain(e.target.value);
+              onChange={(v) => {
+                setDomain(v);
                 setCollection("");
               }}
+              options={domainOptions.map((d) => d.name)}
               placeholder="Domain (e.g. Docker)"
-              className="flex-1 h-8 px-2.5 bg-[var(--color-panel-3)] border border-[var(--color-border)] text-[var(--color-text-2)] font-mono text-xs outline-none"
+              className="w-full h-8 px-2.5 bg-[var(--color-panel-3)] border border-[var(--color-border)] text-[var(--color-text-2)] font-mono text-xs outline-none"
             />
-            <input
+            <Combobox
               name="collectionName"
-              list="collection-options"
               value={collection}
-              onChange={(e) => setCollection(e.target.value)}
+              onChange={setCollection}
+              options={collectionsForDomain.map((c) => c.name)}
               placeholder="Collection"
               disabled={!domain}
-              className="flex-1 h-8 px-2.5 bg-[var(--color-panel-3)] border border-[var(--color-border)] text-[var(--color-text-2)] font-mono text-xs outline-none disabled:opacity-50"
+              className="w-full h-8 px-2.5 bg-[var(--color-panel-3)] border border-[var(--color-border)] text-[var(--color-text-2)] font-mono text-xs outline-none disabled:opacity-50"
             />
-            <datalist id="domain-options">
-              {domainOptions.map((d) => (
-                <option key={d.name} value={d.name} />
-              ))}
-            </datalist>
-            <datalist id="collection-options">
-              {collectionsForDomain.map((c) => (
-                <option key={c.name} value={c.name} />
-              ))}
-            </datalist>
           </div>
 
           <div className="flex flex-wrap gap-1.5 items-center">
