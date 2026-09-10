@@ -1,8 +1,9 @@
 /**
- * Seeds demo content ported from the original design mock (Docker, Kubernetes,
- * PostgreSQL, Git, Spring Boot, Linux) so a fresh install has something real
- * to browse, search and graph immediately. Safe to re-run: notes are upserted
- * by slug. Run with `npm run db:seed`.
+ * Seeds two example notes — one COMMAND, one TROUBLESHOOTING — that between
+ * them demonstrate every section kind (text, code, list, warning, tabs) so a
+ * fresh install has a real, working example to capture your own notes from.
+ * Safe to re-run: notes are upserted by slug, existing notes are never
+ * touched or deleted. Run with `npm run db:seed`.
  */
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -56,7 +57,7 @@ const notes: SeedNote[] = [
     id: "docker-prune", title: "docker system prune", type: "COMMAND", domain: "Docker", coll: "Cleanup", agoDays: 4, uses: 11,
     summary: "Removes stopped containers, unused networks, dangling images and the build cache in a single pass. The flags decide how much of your disk you get back — and how much you lose.",
     tags: ["docker", "disk", "cleanup"],
-    links: [{ id: "volume-prune", rel: "narrower" }, { id: "build-agent", rel: "used by" }, { id: "crashloop", rel: "related" }],
+    links: [{ id: "crashloop", rel: "related" }],
     sections: [
       { h: "Purpose", body: 'Reclaim disk on a machine where images and layers have accumulated. On CI agents this is usually the difference between a green build and "no space left on device".' },
       { h: "Command", codeTitle: "Full clean, no prompt", lang: "shell", hi: [1],
@@ -71,32 +72,9 @@ const notes: SeedNote[] = [
     ],
   },
   {
-    id: "volume-prune", title: "docker volume prune", type: "COMMAND", domain: "Docker", coll: "Cleanup", agoDays: 4, uses: 3,
-    summary: "Deletes volumes not referenced by any container. Narrower and safer than a full system prune.",
-    tags: ["docker", "volumes"], links: [{ id: "docker-prune", rel: "broader" }],
-    sections: [{ h: "Command", codeTitle: "Prune volumes", lang: "shell", code: 'docker volume prune -f\n\n# keep anything labelled keep=true\ndocker volume prune --filter "label!=keep=true"' }],
-  },
-  {
-    id: "image-prune", title: "docker image prune", type: "COMMAND", domain: "Docker", coll: "Cleanup", agoDays: 14, uses: 6,
-    summary: "Removes dangling images; with -a, every image not used by a container.",
-    tags: ["docker", "images"], links: [{ id: "docker-prune", rel: "broader" }],
-    sections: [{ h: "Command", codeTitle: "Age-filtered prune", lang: "shell", code: 'docker image prune -a --filter "until=168h"' }],
-  },
-  {
-    id: "build-agent", title: "Reclaim disk space on a build agent", type: "PROCEDURE", domain: "Docker", coll: "Cleanup", agoDays: 6, uses: 2,
-    summary: "The order to run cleanup in when a runner is out of disk mid-pipeline, without killing an in-flight build.",
-    tags: ["ci", "docker", "disk"], links: [{ id: "docker-prune", rel: "uses" }, { id: "journalctl", rel: "related" }],
-    sections: [
-      { h: "Prerequisites", items: ["SSH access to the runner", "No build currently in the push stage", "A record of which volumes hold caches worth keeping"] },
-      { h: "Steps", items: ["Drain the runner so no new job is scheduled.", "Run docker system df -v and note the largest reclaimable group.", "Prune build cache first — it is always safe.", "Prune images older than a week.", "Only then consider volumes."] },
-      { h: "Command", codeTitle: "Safe order", lang: "shell", code: 'docker builder prune -af\ndocker image prune -a --filter "until=168h"\ndf -h /var/lib/docker' },
-      { h: "Verification", body: "df -h shows the Docker root below 70%. Re-enable the runner and watch the first job complete end to end." },
-    ],
-  },
-  {
     id: "crashloop", title: "Pod stuck in CrashLoopBackOff", type: "TROUBLESHOOTING", domain: "Kubernetes", coll: "Workloads", agoDays: 1, uses: 9,
     summary: "The container starts, exits, and Kubernetes backs off before restarting it. The pod is a symptom — the cause is almost always in the previous container log or the probe config.",
-    tags: ["kubernetes", "pods", "debug"], links: [{ id: "rollout-restart", rel: "related" }, { id: "hikari", rel: "cause of" }, { id: "k8s-path", rel: "part of" }],
+    tags: ["kubernetes", "pods", "debug"], links: [{ id: "docker-prune", rel: "related" }],
     sections: [
       { h: "Symptoms", body: "kubectl get pods shows CrashLoopBackOff with a rising restart count. Backoff doubles up to five minutes, so late in an incident the pod looks frozen rather than crashing." },
       { h: "Diagnostics", codeTitle: "Read the log of the run that died", lang: "shell", hi: [0],
@@ -106,83 +84,6 @@ const notes: SeedNote[] = [
         code: "startupProbe:\n  httpGet: { path: /healthz, port: 8080 }\n  failureThreshold: 30   # 30 x 5s = 150s to boot\n  periodSeconds: 5" },
       { h: "Prevention", body: "Separate liveness from readiness, and never point liveness at an endpoint that touches the database." },
     ],
-  },
-  {
-    id: "rollout-restart", title: "kubectl rollout restart", type: "COMMAND", domain: "Kubernetes", coll: "Workloads", agoDays: 7, uses: 14,
-    summary: "Rolls pods one at a time, respecting readiness probes. The correct way to pick up a changed secret or config map.",
-    tags: ["kubectl", "deploy"], links: [{ id: "crashloop", rel: "related" }],
-    sections: [
-      { h: "Command", codeTitle: "Restart and watch", lang: "shell", code: "kubectl rollout restart deploy/api -n prod\nkubectl rollout status deploy/api -n prod --watch" },
-      { h: "Rollback", codeTitle: "Undo", lang: "shell", code: "kubectl rollout undo deploy/api -n prod" },
-    ],
-  },
-  {
-    id: "k8s-path", title: "Kubernetes networking, in order", type: "PATH", domain: "Kubernetes", coll: "Networking", agoDays: 21, uses: 4,
-    summary: "Seven notes, read in this order, that take you from a single pod IP to ingress routing without the usual detours.",
-    tags: ["kubernetes", "networking", "learning"], links: [{ id: "crashloop", rel: "includes" }, { id: "rollout-restart", rel: "includes" }],
-    sections: [{ h: "Order", items: ["Pod IPs and the flat network assumption", "Services as stable virtual IPs", "kube-proxy and iptables rules", "Cluster DNS and search domains", "Headless services and StatefulSets", "Ingress controllers", "Network policies"] }],
-  },
-  {
-    id: "jsonb", title: "PostgreSQL JSONB operators", type: "REFERENCE", domain: "PostgreSQL", coll: "Types", agoDays: 5, uses: 17,
-    summary: "The operator table you actually need, plus which of them a GIN index can use.",
-    tags: ["postgres", "jsonb", "sql"], links: [{ id: "vacuum", rel: "related" }],
-    sections: [
-      { h: "Operators", codeTitle: "The ones worth memorising", lang: "sql",
-        code: "-- object field, returns jsonb\ndata -> 'user'\n-- object field, returns text\ndata ->> 'email'\n-- path\ndata #> '{user,address,city}'\n-- containment (GIN-indexable)\ndata @> '{\"active\": true}'\n-- key exists\ndata ? 'email'" },
-      { h: "Indexing", body: "A default GIN index supports @>, ? and ?&. It does not help -> or ->> comparisons; for those, index the expression directly.",
-        codeTitle: "Two shapes of index", lang: "sql", code: "CREATE INDEX ON events USING GIN (data);\nCREATE INDEX ON events ((data ->> 'email'));" },
-      { h: "Trade-offs", body: "jsonb_path_ops indexes are smaller and faster for containment, but support only @>. Choose it when every query is a containment query." },
-    ],
-  },
-  {
-    id: "vacuum", title: "VACUUM vs VACUUM FULL", type: "REFERENCE", domain: "PostgreSQL", coll: "Operations", agoDays: 30, uses: 5,
-    summary: "One reclaims space for reuse inside the table; the other rewrites the table and takes an exclusive lock.",
-    tags: ["postgres", "maintenance"], links: [{ id: "jsonb", rel: "related" }],
-    sections: [
-      { h: "Difference", codeTitle: "Two very different operations", lang: "sql", code: "VACUUM (ANALYZE) events;      -- online, marks space reusable\nVACUUM FULL events;           -- rewrites, ACCESS EXCLUSIVE lock" },
-      { h: "Warning", warn: "VACUUM FULL blocks reads and writes for the whole rewrite. On a large table use pg_repack instead." },
-    ],
-  },
-  {
-    id: "reflog", title: "Recover a commit you thought you lost", type: "PROCEDURE", domain: "Git", coll: "Recovery", agoDays: 60, uses: 8,
-    summary: "A hard reset, a bad rebase, a deleted branch — the commit is still there for about 90 days.",
-    tags: ["git", "recovery"], links: [{ id: "rebase-onto", rel: "related" }],
-    sections: [
-      { h: "Steps", items: ["Find the commit in the reflog by its message or time.", "Create a branch at that hash before doing anything else.", "Verify the tree, then merge or cherry-pick."] },
-      { h: "Command", codeTitle: "Find and rescue", lang: "shell", code: "git reflog --date=iso | head -30\ngit branch rescue/lost-work 9f3c1ab\ngit log --stat rescue/lost-work -1" },
-    ],
-  },
-  {
-    id: "rebase-onto", title: "git rebase --onto", type: "COMMAND", domain: "Git", coll: "History", agoDays: 90, uses: 4,
-    summary: "Move a range of commits onto a different base — the one rebase flag worth learning properly.",
-    tags: ["git", "rebase"], links: [{ id: "reflog", rel: "related" }],
-    sections: [{ h: "Command", codeTitle: "Read it as: onto, from, what", lang: "shell", code: "# take feature commits off develop, put them on main\ngit rebase --onto main develop feature" }],
-  },
-  {
-    id: "hikari", title: "HikariCP connection pool exhausted", type: "TROUBLESHOOTING", domain: "Spring Boot", coll: "Data", agoDays: 14, uses: 7,
-    summary: "Requests hang for 30 seconds then fail with a timeout. The pool is not too small — something is holding connections.",
-    tags: ["spring", "jdbc", "debug"], links: [{ id: "crashloop", rel: "symptom of" }, { id: "spring-deploy", rel: "related" }],
-    sections: [
-      { h: "Symptoms", body: "HikariPool-1 - Connection is not available, request timed out after 30000ms. Thread count climbs; the database shows idle-in-transaction sessions." },
-      { h: "Diagnostics", codeTitle: "Turn on leak detection", lang: "yaml", code: "spring:\n  datasource:\n    hikari:\n      leak-detection-threshold: 20000\n      maximum-pool-size: 20" },
-      { h: "Common causes", items: ["A @Transactional method calling a slow HTTP client while holding the connection.", "Streaming a large result set without a fetch size.", "Pool size larger than the database max_connections divided by instance count."] },
-    ],
-  },
-  {
-    id: "spring-deploy", title: "Deploy a Spring Boot service to Kubernetes", type: "PROCEDURE", domain: "Spring Boot", coll: "Delivery", agoDays: 21, uses: 6,
-    summary: "Build, tag, push, roll, verify — the sequence with the checks that catch problems before traffic does.",
-    tags: ["spring", "kubernetes", "deploy"], links: [{ id: "rollout-restart", rel: "uses" }, { id: "hikari", rel: "related" }],
-    sections: [
-      { h: "Steps", items: ["Build a layered image so dependency layers cache.", "Tag with the git sha, never with latest.", "Push, then set the image on the deployment.", "Watch the rollout to completion.", "Hit /actuator/health on the new pod before declaring it done."] },
-      { h: "Command", codeTitle: "Build and roll", lang: "shell", code: "mvn -q spring-boot:build-image -Dspring-boot.build-image.imageName=reg/api:$(git rev-parse --short HEAD)\nkubectl set image deploy/api api=reg/api:$(git rev-parse --short HEAD) -n prod" },
-      { h: "Rollback", codeTitle: "If health never goes green", lang: "shell", code: "kubectl rollout undo deploy/api -n prod" },
-    ],
-  },
-  {
-    id: "journalctl", title: "systemd journal queries", type: "REFERENCE", domain: "Linux", coll: "Observability", agoDays: 30, uses: 5,
-    summary: "Filtering the journal by unit, time and priority instead of scrolling.",
-    tags: ["linux", "systemd", "logs"], links: [{ id: "build-agent", rel: "related" }],
-    sections: [{ h: "Queries", codeTitle: "Common filters", lang: "shell", code: 'journalctl -u docker --since "1 hour ago"\njournalctl -p err -b -1        # errors, previous boot\njournalctl -f -u api.service' }],
   },
 ];
 
