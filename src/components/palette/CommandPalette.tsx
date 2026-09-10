@@ -64,6 +64,26 @@ export function CommandPalette() {
     router.push(href);
   }
 
+  const allCommands = [
+    ...(noteContext
+      ? [
+          { glyph: "✎", label: "Edit this note", hint: "E", onSelect: () => go(`/n/${noteContext.slug}/edit`) },
+          { glyph: "◎", label: `Open graph around ${noteContext.title}`, hint: "G", onSelect: () => go(`/graph?focus=${noteContext.slug}`) },
+        ]
+      : []),
+    { glyph: "⌁", label: "New capture", hint: "N", onSelect: () => go("/capture") },
+    { glyph: "◐", label: "Search knowledge", hint: "/", onSelect: () => go("/search") },
+    ...(!noteContext ? [{ glyph: "◎", label: "Open graph explorer", hint: "G", onSelect: () => go("/graph") }] : []),
+    { glyph: "⌂", label: "Go home", hint: "", onSelect: () => go("/") },
+    { glyph: "◧", label: "Toggle theme", hint: "", onSelect: () => { toggleTheme(); setOpen(false); } },
+  ];
+  // Filters the static command list against the typed query too, so typing
+  // "theme" narrows straight to Toggle theme instead of always showing every
+  // command alongside matching notes.
+  const commandsMatching = searchTerm.trim()
+    ? allCommands.filter((c) => c.label.toLowerCase().includes(searchTerm.trim().toLowerCase()))
+    : allCommands;
+
   if (!open) return null;
 
   return (
@@ -102,19 +122,11 @@ export function CommandPalette() {
             Nothing matches.
           </Command.Empty>
 
-          {mode !== "notes" ? (
+          {mode !== "notes" && commandsMatching.length > 0 ? (
             <Command.Group>
-              {noteContext ? (
-                <>
-                  <PaletteItem glyph="✎" label="Edit this note" hint="E" onSelect={() => go(`/n/${noteContext.slug}/edit`)} />
-                  <PaletteItem glyph="◎" label={`Open graph around ${noteContext.title}`} hint="G" onSelect={() => go(`/graph?focus=${noteContext.slug}`)} />
-                </>
-              ) : null}
-              <PaletteItem glyph="⌁" label="New capture" hint="N" onSelect={() => go("/capture")} />
-              <PaletteItem glyph="◐" label="Search knowledge" hint="/" onSelect={() => go("/search")} />
-              {!noteContext ? <PaletteItem glyph="◎" label="Open graph explorer" hint="G" onSelect={() => go("/graph")} /> : null}
-              <PaletteItem glyph="⌂" label="Go home" hint="" onSelect={() => go("/")} />
-              <PaletteItem glyph="◧" label="Toggle theme" hint="" onSelect={() => { toggleTheme(); setOpen(false); }} />
+              {commandsMatching.map((c) => (
+                <PaletteItem key={c.label} glyph={c.glyph} label={c.label} hint={c.hint} onSelect={c.onSelect} />
+              ))}
             </Command.Group>
           ) : null}
 
