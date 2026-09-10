@@ -23,12 +23,12 @@ export function TopBar({ authed }: { authed: boolean }) {
   // Enter (or clicking SEARCH) still goes to the full /search page with
   // filters/sorting — this is just the fast path to a note you already know.
   useEffect(() => {
-    if (!q.trim()) {
-      setSuggestions([]);
-      return;
-    }
     const controller = new AbortController();
     const timer = setTimeout(async () => {
+      if (!q.trim()) {
+        setSuggestions([]);
+        return;
+      }
       try {
         const res = await fetch(`/api/v1/notes?lite=1&q=${encodeURIComponent(q.trim())}&limit=6`, {
           signal: controller.signal,

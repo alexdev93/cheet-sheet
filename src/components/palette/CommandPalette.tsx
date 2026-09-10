@@ -25,12 +25,12 @@ export function CommandPalette() {
 
   useEffect(() => {
     if (!open) return;
-    if (mode === "commands") {
-      setNotes([]);
-      return;
-    }
     const controller = new AbortController();
     const timer = setTimeout(async () => {
+      if (mode === "commands") {
+        setNotes([]);
+        return;
+      }
       try {
         const res = await fetch(`/api/v1/notes?lite=1&q=${encodeURIComponent(searchTerm)}&limit=8`, {
           signal: controller.signal,
@@ -49,11 +49,15 @@ export function CommandPalette() {
     };
   }, [open, mode, searchTerm]);
 
-  useEffect(() => {
-    if (!open) {
-      setQuery("");
-    }
-  }, [open]);
+  // Reset the query when the palette closes — derived during render (per
+  // React's "adjusting state when a prop changes" pattern) rather than in
+  // an effect, since this component stays mounted (it renders `null`) while
+  // closed instead of unmounting.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (!open) setQuery("");
+  }
 
   function go(href: string) {
     setOpen(false);

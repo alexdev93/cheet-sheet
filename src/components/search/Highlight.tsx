@@ -7,28 +7,32 @@
  */
 export function Highlight({ text }: { text: string }) {
   const parts = text.split(/(<b>|<\/b>)/);
+  const segments: { text: string; bold: boolean }[] = [];
   let bolding = false;
+  for (const part of parts) {
+    if (part === "<b>") {
+      bolding = true;
+      continue;
+    }
+    if (part === "</b>") {
+      bolding = false;
+      continue;
+    }
+    if (!part) continue;
+    segments.push({ text: part, bold: bolding });
+  }
 
   return (
     <>
-      {parts.map((part, i) => {
-        if (part === "<b>") {
-          bolding = true;
-          return null;
-        }
-        if (part === "</b>") {
-          bolding = false;
-          return null;
-        }
-        if (!part) return null;
-        return bolding ? (
+      {segments.map((seg, i) =>
+        seg.bold ? (
           <mark key={i} className="bg-transparent text-accent font-semibold">
-            {part}
+            {seg.text}
           </mark>
         ) : (
-          <span key={i}>{part}</span>
-        );
-      })}
+          <span key={i}>{seg.text}</span>
+        )
+      )}
     </>
   );
 }
