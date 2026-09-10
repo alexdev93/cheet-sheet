@@ -34,6 +34,50 @@ export async function refreshNoteSearchVector(noteId: string): Promise<void> {
   `;
 }
 
+export type LiteHit = { slug: string; title: string; type: NoteType };
+
+/**
+ * Search-as-you-type for the top bar and command palette. Building a prefix
+ * tsquery ("dock:*") lets a partial word like "dock" match "Docker" while
+ * still hitting the "notes_searchVector_idx" GIN index — unlike a plain
+ * `title ILIKE '%q%'`, which can never use a btree/GIN index because of the
+ * leading wildcard and forces a full table scan on every keystroke.
+ *
+ * The query text is tokenized through to_tsvector() first and only the
+ * resulting lexemes (plain alphanumeric stems, never raw user input) are
+ * spliced into the to_tsquery() string, so this is safe against tsquery
+ * operator injection despite not going through Prisma.sql for that part.
+ */
+export async function searchNotesLite(opts: {
+  query: string;
+  type?: NoteType | "ALL";
+  limit?: number;
+}): Promise<LiteHit[]> {
+  const { query, type = "ALL", limit = 8 } = opts;
+  const q = query.trim();
+  if (!q) return [];
+
+  const typeFilter = type !== "ALL" ? Prisma.sql`AND n.type = ${type}::"NoteType"` : Prisma.empty;
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(limit, 50)) : 8;
+
+  const rows = await db.$queryRaw<LiteHit[]>(Prisma.sql`
+    WITH q AS (
+      SELECT string_agg(lexeme || ':*', ' & ') AS tsq
+      FROM unnest(tsvector_to_array(to_tsvector('english', ${q}))) AS lexeme
+    )
+    SELECT n.slug, n.title, n.type
+    FROM "notes" n, q
+    WHERE n.status = 'PUBLISHED'
+      AND q.tsq IS NOT NULL
+      AND n."searchVector" @@ to_tsquery('english', q.tsq)
+      ${typeFilter}
+    ORDER BY n."useCount" DESC
+    LIMIT ${safeLimit}
+  `);
+
+  return rows;
+}
+
 export type SearchSort = "relevance" | "recent" | "most-used";
 
 export type SearchHit = {

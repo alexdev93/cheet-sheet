@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { noteInputSchema, parseSort, parseTypeFilter } from "@/lib/validation";
-import { searchNotes } from "@/lib/search";
+import { searchNotes, searchNotesLite } from "@/lib/search";
 import { createNote, listRecentNotes } from "@/server/notes";
 import { db } from "@/lib/db";
 
@@ -20,16 +20,14 @@ export async function GET(req: NextRequest) {
   const lite = searchParams.get("lite") === "1";
 
   if (lite) {
-    const notes = await db.note.findMany({
-      where: {
-        status: "PUBLISHED",
-        ...(q ? { title: { contains: q, mode: "insensitive" } } : {}),
-        ...(type !== "ALL" ? { type } : {}),
-      },
-      select: { slug: true, title: true, type: true },
-      take: limit,
-      orderBy: q ? { useCount: "desc" } : { updatedAt: "desc" },
-    });
+    const notes = q
+      ? await searchNotesLite({ query: q, type, limit })
+      : await db.note.findMany({
+          where: { status: "PUBLISHED", ...(type !== "ALL" ? { type } : {}) },
+          select: { slug: true, title: true, type: true },
+          take: limit,
+          orderBy: { updatedAt: "desc" },
+        });
     return NextResponse.json({ notes });
   }
 
