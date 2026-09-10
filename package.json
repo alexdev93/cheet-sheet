@@ -17,7 +17,7 @@
     "db:migrate": "envvault run ${ENV_VAULT_PROJECT:-cheet-sheet} -- prisma migrate dev",
     "db:migrate:deploy": "envvault run ${ENV_VAULT_PROJECT:-cheet-sheet} -- prisma migrate deploy",
     "db:push": "envvault run ${ENV_VAULT_PROJECT:-cheet-sheet} -- prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "envvault run ${ENV_VAULT_PROJECT:-cheet-sheet} -- tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "auth:hash": "tsx scripts/hash-password.ts",
     "postinstall": "prisma generate"

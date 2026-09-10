@@ -12,37 +12,17 @@ concurrency:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: knowledge
-          POSTGRES_PASSWORD: knowledge
-          POSTGRES_DB: knowledge_center
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U knowledge -d knowledge_center"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
 
     env:
-      # Fallback values for steps below that don't go through envvault
-      # (Build, and anything else run directly rather than via an
-      # `envvault run`-wrapped npm script).
-      DATABASE_URL: postgresql://knowledge:knowledge@localhost:5432/knowledge_center?schema=public
-      SESSION_SECRET: ci-only-secret-not-used-anywhere-real-0000000000
-      ADMIN_EMAIL: admin@example.com
-      # bcrypt hash of "ci-placeholder" — never used to authenticate anything real.
-      ADMIN_PASSWORD_HASH: "$2a$12$K8Z1r6nY6m1E8F3iH2v3YOQnQwYV1cQe3m9m7m4x2yq2b0mYX2sHW"
-      NEXT_PUBLIC_SITE_URL: http://localhost:3000
-      # npm scripts wrapped with `envvault run` (postinstall, db:migrate:deploy,
-      # ...) ignore the plain env above and instead pull from this vault
-      # project — must hold a DATABASE_URL pointing at the "postgres" service
-      # below (localhost:5432/knowledge_center), matching the value above.
+      # `next build` needs a syntactically valid DATABASE_URL to generate the
+      # Prisma client and prerender pages — it's never actually connected to
+      # (same reasoning as the Dockerfile's own build-time placeholder).
+      DATABASE_URL: postgresql://user:pass@localhost:5432/db
+      # Real secrets (the same ones local dev and the deployed app use) come
+      # from the "cheet-sheet" envvault project via `envvault run`-wrapped npm
+      # scripts (db:migrate:deploy, db:seed, ...) below — this token is the
+      # only thing CI needs on top of the placeholder above.
       ENV_VAULT_TOKEN: ${{ secrets.ENV_VAULT_TOKEN }}
-      ENV_VAULT_PROJECT: ci
 
     steps:
       - uses: actions/checkout@v4
