@@ -21,16 +21,18 @@ RUN npm install
 
 FROM node:24-alpine AS builder
 WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 # envvault (https://env-vault-api.alexdev93.workers.dev) fetches this app's
 # real secrets at container runtime -- see the "migrate" service's command
 # in docker-compose.yml. It only needs curl+bash to install and node (already
 # present) to parse its response; it authenticates via ENV_VAULT_TOKEN, no
-# `envvault login` step needed in a container.
+# `envvault login` step needed in a container. patch-envvault.mjs works
+# around a shell-escaping bug in the installed script (see that file).
 RUN apk add --no-cache curl bash && \
     curl -fsS https://env-vault-api.alexdev93.workers.dev/install.sh | sh && \
-    mv /root/.local/bin/envvault /usr/local/bin/envvault
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+    mv /root/.local/bin/envvault /usr/local/bin/envvault && \
+    node scripts/patch-envvault.mjs /usr/local/bin/envvault
 # The build needs a syntactically valid DATABASE_URL to generate the Prisma
 # client and prerender pages that touch the database at build time — it is
 # never actually connected to during `next build`. The real one is fetched
@@ -44,9 +46,11 @@ FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
-RUN apk add --no-cache curl bash && \
-    curl -fsS https://env-vault-api.alexdev93.workers.dev/install.sh | sh && \
-    mv /root/.local/bin/envvault /usr/local/bin/envvault
+# curl+bash are envvault's own runtime dependencies (it shells out to curl
+# and is itself a bash script); the already-patched binary is reused from
+# the builder stage rather than re-installing it here.
+RUN apk add --no-cache curl bash
+COPY --from=builder /usr/local/bin/envvault /usr/local/bin/envvault
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
