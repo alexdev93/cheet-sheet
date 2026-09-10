@@ -71,14 +71,22 @@ export function GraphExplorer({ initialData, initialFocusSlug }: { initialData: 
     return set;
   }, [selected, laidOut.edges]);
 
-  const relations = laidOut.edges
-    .filter((e) => selected && (e.source === selected.id || e.target === selected.id))
-    .map((e) => {
-      const otherId = e.source === selected!.id ? e.target : e.source;
-      const other = byId.get(typeof otherId === "string" ? otherId : (otherId as unknown as { id: string }).id);
-      return other ? { relation: e.relation, node: other } : null;
-    })
-    .filter((r): r is { relation: string; node: LaidOutNode } => !!r);
+  const relations = Array.from(
+    new Map(
+      laidOut.edges
+        .filter((e) => selected && (e.source === selected.id || e.target === selected.id))
+        .map((e) => {
+          const otherId = e.source === selected!.id ? e.target : e.source;
+          const other = byId.get(typeof otherId === "string" ? otherId : (otherId as unknown as { id: string }).id);
+          return other ? { relation: e.relation, node: other } : null;
+        })
+        .filter((r): r is { relation: string; node: LaidOutNode } => !!r)
+        // A link declared in both directions between the same two notes (A
+        // "related" to B, and B "related" to A) is one relationship, not
+        // two — key on the pair so it only shows once.
+        .map((r) => [`${r.node.id}:${r.relation}`, r] as const)
+    ).values()
+  );
 
   return (
     <div className="flex-1 flex min-h-0">
