@@ -48,19 +48,17 @@ Visit `http://localhost:3000`. Sign in at `/login` with `ADMIN_EMAIL` / the pass
 
 ## Getting started (Docker / self-hosted)
 
-```bash
-cp .env.example .env
-# Edit .env — for Docker Compose, DATABASE_URL's host must be "db", not "localhost":
-#   DATABASE_URL="postgresql://knowledge:knowledge@db:5432/knowledge_center?schema=public"
-npm run auth:hash -- "your-password"   # paste into ADMIN_PASSWORD_HASH in .env
+Secrets (`DATABASE_URL`, `SESSION_SECRET`, `ADMIN_*`, ...) are fetched at container start from the `cheet-sheet` [envvault](https://env-vault-api.alexdev93.workers.dev) project rather than a mounted `.env` — `docker-compose.yml` doesn't run its own Postgres container, so `DATABASE_URL` in that vault project must point at a Postgres instance reachable from inside the container (not `localhost`).
 
+```bash
+cp .env.example .env             # only needs ENV_VAULT_TOKEN filled in
 docker compose up --build
 ```
 
-This starts three things: a `db` Postgres container with a persistent volume, a one-off `migrate` service that runs `prisma migrate deploy` and exits, and the `app` service (the slim `output: "standalone"` Next.js image) which only starts once migrations succeed. Seed demo content afterwards with:
+This starts a one-off `migrate` service that runs `prisma migrate deploy` and exits, then the `app` service (the slim `output: "standalone"` Next.js image), which only starts once migrations succeed. Seed demo content afterwards with:
 
 ```bash
-docker compose run --rm migrate npx prisma db seed
+docker compose run --rm migrate envvault run cheet-sheet -- npx prisma db seed
 ```
 
 The app is then at `http://localhost:3000`.
@@ -75,7 +73,7 @@ Everything here is free to run:
 
 ## Environment variables
 
-See `.env.example` for the full list, with inline examples for every value. In short: `DATABASE_URL` (Postgres connection string — note the host differs between local dev and Docker Compose, see the comment there), `SESSION_SECRET` (32+ random bytes, signs the admin session cookie), `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH` (the single admin account, hash generated with `npm run auth:hash`), `ATTACHMENTS_DIR` + `MAX_ATTACHMENT_SIZE_MB` (upload storage), and `NEXT_PUBLIC_SITE_URL`.
+See `.env.example` for the full list, with inline examples for every value — it also documents the values needed for envvault (local dev, Docker Compose) and CI. In short: `DATABASE_URL` (Postgres connection string), `SESSION_SECRET` (32+ random bytes, signs the admin session cookie), `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH` (the single admin account, hash generated with `npm run auth:hash`), `ATTACHMENTS_DIR` + `MAX_ATTACHMENT_SIZE_MB` (upload storage), and `NEXT_PUBLIC_SITE_URL`.
 
 ### A note on package-lock.json
 

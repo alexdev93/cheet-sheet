@@ -19,12 +19,20 @@ RUN npm install
 
 FROM node:24-alpine AS builder
 WORKDIR /app
+# envvault (https://env-vault-api.alexdev93.workers.dev) fetches this app's
+# real secrets at container runtime -- see the "migrate" service's command
+# in docker-compose.yml. It only needs curl+bash to install and node (already
+# present) to parse its response; it authenticates via ENV_VAULT_TOKEN, no
+# `envvault login` step needed in a container.
+RUN apk add --no-cache curl bash && \
+    curl -fsS https://env-vault-api.alexdev93.workers.dev/install.sh | sh && \
+    mv /root/.local/bin/envvault /usr/local/bin/envvault
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # The build needs a syntactically valid DATABASE_URL to generate the Prisma
 # client and prerender pages that touch the database at build time — it is
-# never actually connected to during `next build`. The real one is supplied
-# at container runtime via docker-compose/.env.
+# never actually connected to during `next build`. The real one is fetched
+# from envvault at container runtime instead (see the CMD/command below).
 ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 ENV SESSION_SECRET="build-time-placeholder-not-used-at-runtime"
 RUN npx prisma generate
@@ -34,6 +42,9 @@ FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+RUN apk add --no-cache curl bash && \
+    curl -fsS https://env-vault-api.alexdev93.workers.dev/install.sh | sh && \
+    mv /root/.local/bin/envvault /usr/local/bin/envvault
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -49,4 +60,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV ATTACHMENTS_DIR="/app/data/attachments"
 
-CMD ["node", "server.js"]
+CMD ["envvault", "run", "cheet-sheet", "--", "node", "server.js"]

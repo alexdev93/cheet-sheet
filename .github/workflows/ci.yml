@@ -28,12 +28,21 @@ jobs:
           --health-retries 10
 
     env:
+      # Fallback values for steps below that don't go through envvault
+      # (Build, and anything else run directly rather than via an
+      # `envvault run`-wrapped npm script).
       DATABASE_URL: postgresql://knowledge:knowledge@localhost:5432/knowledge_center?schema=public
       SESSION_SECRET: ci-only-secret-not-used-anywhere-real-0000000000
       ADMIN_EMAIL: admin@example.com
       # bcrypt hash of "ci-placeholder" — never used to authenticate anything real.
       ADMIN_PASSWORD_HASH: "$2a$12$K8Z1r6nY6m1E8F3iH2v3YOQnQwYV1cQe3m9m7m4x2yq2b0mYX2sHW"
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      # npm scripts wrapped with `envvault run` (postinstall, db:migrate:deploy,
+      # ...) ignore the plain env above and instead pull from this vault
+      # project — must hold a DATABASE_URL pointing at the "postgres" service
+      # below (localhost:5432/knowledge_center), matching the value above.
+      ENV_VAULT_TOKEN: ${{ secrets.ENV_VAULT_TOKEN }}
+      ENV_VAULT_PROJECT: ci
 
     steps:
       - uses: actions/checkout@v4
