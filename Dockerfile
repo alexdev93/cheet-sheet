@@ -11,6 +11,8 @@
 FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
+# `postinstall` runs `prisma generate`, which needs the schema present.
+COPY prisma ./prisma
 # Uses `npm install` rather than `npm ci` because no package-lock.json is
 # committed yet (generate one with `npm install` once you have registry
 # access and commit it — then switch this back to `npm ci` for reproducible,
