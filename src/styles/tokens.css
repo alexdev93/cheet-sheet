@@ -1,0 +1,80 @@
+/* Modernist design tokens — dark ground, Archivo, 2px rules, one red accent.
+   Dark is the canonical palette the mock was designed against; light is a
+   deliberate inversion that keeps the same accent and contrast ratios. */
+
+:root {
+  --color-bg: #0e0d0d;
+  --color-panel: #131211;
+  --color-panel-2: #191817;
+  --color-panel-3: #1c1a19;
+  --color-border: #3a3735;
+  --color-border-strong: #4a4644;
+  --color-text: #f0ece8;
+  --color-text-2: #cfc8c2;
+  --color-text-3: #a8a19b;
+  --color-muted: #8b837d;
+  --color-muted-2: #6c6560;
+  --color-accent: #ff563c;
+  --color-accent-hover: #ff9783;
+  --color-accent-strong: #ec3013;
+  --color-warn-bg: #231512;
+
+  --code-default: #ddd6d0;
+  --code-comment: #847c76;
+  --code-string: #ffc4b8;
+  --code-flag: #ffa48f;
+  --code-keyword: #ff563c;
+  --code-number: #b7c98f;
+}
+
+:root[data-theme="light"] {
+  --color-bg: #f7f5f3;
+  --color-panel: #ffffff;
+  --color-panel-2: #f3f1ee;
+  --color-panel-3: #ebe8e4;
+  --color-border: #ddd7d1;
+  --color-border-strong: #c7c0b9;
+  --color-text: #17130f;
+  --color-text-2: #33302d;
+  --color-text-3: #4a4340;
+  --color-muted: #746c66;
+  --color-muted-2: #948b83;
+  --color-accent: #ec3013;
+  --color-accent-hover: #c22509;
+  --color-accent-strong: #c22509;
+  --color-warn-bg: #fdeae7;
+
+  --code-default: #2a2622;
+  --code-comment: #8c8479;
+  --code-string: #b5361f;
+  --code-flag: #a8431f;
+  --code-keyword: #ec3013;
+  --code-number: #4c6b2f;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --color-bg: #f7f5f3;
+    --color-panel: #ffffff;
+    --color-panel-2: #f3f1ee;
+    --color-panel-3: #ebe8e4;
+    --color-border: #ddd7d1;
+    --color-border-strong: #c7c0b9;
+    --color-text: #17130f;
+    --color-text-2: #33302d;
+    --color-text-3: #4a4340;
+    --color-muted: #746c66;
+    --color-muted-2: #948b83;
+    --color-accent: #ec3013;
+    --color-accent-hover: #c22509;
+    --color-accent-strong: #c22509;
+    --color-warn-bg: #fdeae7;
+
+    --code-default: #2a2622;
+    --code-comment: #8c8479;
+    --code-string: #b5361f;
+    --code-flag: #a8431f;
+    --code-keyword: #ec3013;
+    --code-number: #4c6b2f;
+  }
+}

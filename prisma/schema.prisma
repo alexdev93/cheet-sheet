@@ -1,0 +1,237 @@
+// Open Knowledge & Memory Center — data model.
+// Domain -> Collection -> Note is a fixed 3-level hierarchy by design: it keeps
+// the tree small enough to stay a navigation aid, not the product. Tags and
+// Links carry the real cross-cutting structure (see README "Mental model").
+
+// Prisma 7: the client is generated to a project-local path (not node_modules)
+// and talks to Postgres through the @prisma/adapter-pg driver adapter — see
+// src/lib/db.ts. No engine binary, no binaryTargets, nothing OS-specific to
+// get right for the Docker image.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// The connection URL itself lives in prisma.config.ts (CLI/Migrate) and
+// src/lib/db.ts (runtime client via the adapter) — Prisma 7 no longer reads
+// it from this file.
+datasource db {
+  provider = "postgresql"
+}
+
+enum NoteType {
+  NOTE
+  COMMAND
+  CODE_SNIPPET
+  PROCEDURE
+  RUNBOOK
+  ALGORITHM
+  CONCEPT
+  TROUBLESHOOTING
+  REFERENCE
+  FLASHCARD
+  CHECKLIST
+  PATH
+}
+
+enum NoteStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SectionKind {
+  TEXT
+  LIST
+  CODE
+  WARNING
+  TABS
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  notes    Note[]
+  versions NoteVersion[]
+
+  @@map("users")
+}
+
+model Domain {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  icon        String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  collections Collection[]
+
+  @@map("domains")
+}
+
+model Collection {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String
+  domainId  String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  domain Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  notes  Note[]
+
+  @@unique([domainId, slug])
+  @@index([domainId])
+  @@map("collections")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  notes NoteTag[]
+
+  @@map("tags")
+}
+
+model NoteTag {
+  noteId String
+  tagId  String
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+  @@index([tagId])
+  @@map("note_tags")
+}
+
+model Note {
+  id           String     @id @default(cuid())
+  slug         String     @unique
+  title        String
+  summary      String?
+  type         NoteType   @default(NOTE)
+  status       NoteStatus @default(DRAFT)
+  useCount     Int        @default(0)
+  favorite     Boolean    @default(false)
+
+  collectionId String?
+  authorId     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  collection Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  author     User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  sections    Section[]
+  tags        NoteTag[]
+  attachments Attachment[]
+  versions    NoteVersion[]
+
+  linksOut Link[] @relation("SourceLinks")
+  linksIn  Link[] @relation("TargetLinks")
+
+  // Generated tsvector column + GIN index are created by raw SQL in
+  // prisma/migrations/0_init (Prisma's schema language can't express
+  // generated columns/triggers, see lib/search.ts for how it's queried).
+  searchVector Unsupported("tsvector")?
+
+  @@index([collectionId])
+  @@index([status])
+  @@index([type])
+  @@map("notes")
+}
+
+model Section {
+  id        String      @id @default(cuid())
+  noteId    String
+  order     Int
+  heading   String
+  kind      SectionKind @default(TEXT)
+  body      String?
+  items     String[]    @default([])
+  warning   String?
+  codeTitle String?
+  codeLang  String?
+  code      String?
+  highlightLines Int[]  @default([])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  note Note         @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tabs SectionTab[]
+
+  @@index([noteId])
+  @@map("sections")
+}
+
+model SectionTab {
+  id        String  @id @default(cuid())
+  sectionId String
+  order     Int
+  label     String
+  lang      String
+  code      String
+
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([sectionId])
+  @@map("section_tabs")
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  noteId    String
+  filename  String
+  url       String
+  mimeType  String
+  size      Int
+  createdAt DateTime @default(now())
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId])
+  @@map("attachments")
+}
+
+model Link {
+  id        String   @id @default(cuid())
+  sourceId  String
+  targetId  String
+  relation  String
+  createdAt DateTime @default(now())
+
+  source Note @relation("SourceLinks", fields: [sourceId], references: [id], onDelete: Cascade)
+  target Note @relation("TargetLinks", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, targetId, relation])
+  @@index([targetId])
+  @@map("links")
+}
+
+model NoteVersion {
+  id        String   @id @default(cuid())
+  noteId    String
+  authorId  String?
+  summary   String
+  snapshot  Json
+  createdAt DateTime @default(now())
+
+  note   Note  @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([noteId])
+  @@map("note_versions")
+}
