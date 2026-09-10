@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { detectNoteType, NOTE_TYPE_LABELS } from "@/lib/detect";
 import { quickCaptureAction } from "@/server/actions";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import type { NoteType } from "@/generated/prisma/client";
 
 const SHAPES: NoteType[] = ["COMMAND", "PROCEDURE", "TROUBLESHOOTING", "REFERENCE", "PATH"];
@@ -88,6 +89,7 @@ export function CaptureForm({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Paste the command, or start typing what you just learned…"
+        required
         className="w-full min-h-[250px] bg-[var(--color-bg)] border border-[var(--color-border)] border-l-2 border-l-accent text-[var(--color-text)] font-mono text-sm leading-[1.75] p-3.5 outline-none resize-y"
       />
       <input type="hidden" name="type" value={effectiveType} />
@@ -222,13 +224,9 @@ export function CaptureForm({
       </div>
 
       <div className="flex gap-2.5 mt-6.5">
-        <button
-          type="submit"
-          disabled={!step1}
-          className="h-9 px-4 bg-accent text-[var(--color-panel)] font-sans font-extrabold text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <SubmitButton pendingLabel="SAVING…" disabled={!step1}>
           SAVE NOTE
-        </button>
+        </SubmitButton>
       </div>
     </form>
   );

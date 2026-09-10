@@ -11,7 +11,7 @@ import type { NoteType } from "@/generated/prisma/client";
 type LiteNote = { slug: string; title: string; type: NoteType };
 
 export function CommandPalette() {
-  const { open, setOpen, contextTitle } = usePalette();
+  const { open, setOpen, noteContext } = usePalette();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [notes, setNotes] = useState<LiteNote[]>([]);
@@ -87,9 +87,9 @@ export function CommandPalette() {
           <span className="font-mono text-[10px] text-[var(--color-muted-2)] border border-[var(--color-border)] px-[5px] py-1">ESC</span>
         </div>
 
-        {contextTitle ? (
+        {noteContext ? (
           <div className="px-3.5 py-2 border-b border-[var(--color-border)] font-mono text-[11px] text-[var(--color-muted)]">
-            In context: <span className="text-[var(--color-text-2)]">{contextTitle}</span>
+            In context: <span className="text-[var(--color-text-2)]">{noteContext.title}</span>
           </div>
         ) : null}
 
@@ -100,9 +100,15 @@ export function CommandPalette() {
 
           {mode !== "notes" ? (
             <Command.Group>
+              {noteContext ? (
+                <>
+                  <PaletteItem glyph="✎" label="Edit this note" hint="E" onSelect={() => go(`/n/${noteContext.slug}/edit`)} />
+                  <PaletteItem glyph="◎" label={`Open graph around ${noteContext.title}`} hint="G" onSelect={() => go(`/graph?focus=${noteContext.slug}`)} />
+                </>
+              ) : null}
               <PaletteItem glyph="⌁" label="New capture" hint="N" onSelect={() => go("/capture")} />
               <PaletteItem glyph="◐" label="Search knowledge" hint="/" onSelect={() => go("/search")} />
-              <PaletteItem glyph="◎" label="Open graph explorer" hint="G" onSelect={() => go("/graph")} />
+              {!noteContext ? <PaletteItem glyph="◎" label="Open graph explorer" hint="G" onSelect={() => go("/graph")} /> : null}
               <PaletteItem glyph="⌂" label="Go home" hint="" onSelect={() => go("/")} />
               <PaletteItem glyph="◧" label="Toggle theme" hint="" onSelect={() => { toggleTheme(); setOpen(false); }} />
             </Command.Group>

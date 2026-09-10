@@ -11,7 +11,11 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci
+# Uses `npm install` rather than `npm ci` because no package-lock.json is
+# committed yet (generate one with `npm install` once you have registry
+# access and commit it — then switch this back to `npm ci` for reproducible,
+# faster installs).
+RUN npm install
 
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -35,9 +39,14 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Uploaded attachments live here — docker-compose.yml mounts a named volume
+# over this exact path so they survive container recreation.
+RUN mkdir -p /app/data/attachments && chown -R nextjs:nodejs /app/data
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV ATTACHMENTS_DIR="/app/data/attachments"
 
 CMD ["node", "server.js"]

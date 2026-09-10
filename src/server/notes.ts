@@ -111,6 +111,7 @@ export async function getNoteBySlug(slug: string, opts: { includeUnpublished?: b
       linksOut: { include: { target: { select: { slug: true, title: true, summary: true, type: true } } } },
       linksIn: { include: { source: { select: { slug: true, title: true, summary: true, type: true } } } },
       versions: { orderBy: { createdAt: "desc" }, take: 6, select: { id: true, summary: true, createdAt: true } },
+      attachments: { orderBy: { createdAt: "asc" } },
     },
   });
 
@@ -147,6 +148,7 @@ export async function getNoteBySlug(slug: string, opts: { includeUnpublished?: b
     linksOut: note.linksOut.map((l) => ({ relation: l.relation, note: l.target })),
     linksIn: note.linksIn.map((l) => ({ relation: l.relation, note: l.source })),
     history: note.versions,
+    attachments: note.attachments,
   };
 }
 

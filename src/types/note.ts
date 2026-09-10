@@ -34,11 +34,21 @@ export type SectionData = {
 
 export type LinkedNote = { slug: string; title: string; summary: string | null; type: NoteType };
 
+export type AttachmentData = {
+  id: string;
+  filename: string;
+  url: string;
+  mimeType: string;
+  size: number;
+  createdAt: Date;
+};
+
 export type NoteDetail = NoteSummary & {
   sections: SectionData[];
   linksOut: { relation: string; note: LinkedNote }[];
   linksIn: { relation: string; note: LinkedNote }[];
   history: { id: string; summary: string; createdAt: Date }[];
+  attachments: AttachmentData[];
 };
 
 export type SearchHitView = {

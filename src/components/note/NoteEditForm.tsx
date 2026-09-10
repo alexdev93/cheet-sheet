@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { NOTE_TYPE_LABELS } from "@/lib/detect";
 import { createNoteAction, updateNoteAction } from "@/server/actions";
+import { AttachmentManager } from "@/components/note/AttachmentManager";
+import { MarkdownField } from "@/components/ui/MarkdownField";
 import type { NoteInput, SectionInput } from "@/lib/validation";
 import type { NoteDetail } from "@/types/note";
 import type { NoteStatus, NoteType } from "@/generated/prisma/client";
@@ -255,7 +257,7 @@ export function NoteEditForm({
           </div>
 
           <Field label="Body (markdown, optional)">
-            <textarea value={s.body ?? ""} onChange={(e) => updateSection(i, { body: e.target.value })} rows={2} className={inputClass} />
+            <MarkdownField value={s.body ?? ""} onChange={(v) => updateSection(i, { body: v })} rows={3} className={inputClass} />
           </Field>
 
           <Field label="List items — one per line (3+ becomes a step-through)">
@@ -338,6 +340,14 @@ export function NoteEditForm({
           </option>
         ))}
       </datalist>
+
+      {note ? (
+        <>
+          <hr className="h-0.5 border-0 bg-[var(--color-border)] my-6" />
+          <h2 className="text-[15px] font-extrabold mb-3">Attachments</h2>
+          <AttachmentManager noteSlug={note.slug} initial={note.attachments} />
+        </>
+      ) : null}
 
       <div className="flex gap-2.5 mt-8">
         <button

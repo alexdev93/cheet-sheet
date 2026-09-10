@@ -23,9 +23,9 @@ Everything in this repo runs on free, open-source software end to end: Next.js, 
 - Twelve content types (`NOTE`, `COMMAND`, `PROCEDURE`, `TROUBLESHOOTING`, `REFERENCE`, `PATH`, …), extensible without a schema rewrite
 - Markdown body text, syntax-highlighted code blocks with copy buttons, step-through procedures, shell-variant tabs, warning callouts
 - Tags, backlinks/outlinks between notes, a lightweight graph explorer
-- Attachments table (object-storage-ready; no binary files in Postgres by design)
+- Attachments (images, screenshots, diagrams as PNG/JPEG/WebP/GIF, PDFs) — stored on local disk (see `src/lib/storage.ts`), not in Postgres, and served through a validated route so a stray upload can't turn into stored XSS
 - Favorites, use-count tracking, draft/published/archived states, edit history (`NoteVersion`)
-- Full-text search with type filters, sorting, and "why it matched" snippets
+- Full-text search with type filters, sorting, paginated results, and "why it matched" snippets
 - Command palette, fast capture flow (write first, file it later), full note editor
 - A small versioned REST API under `/api/v1` alongside the Server Actions the UI actually uses — both call the same service layer in `src/server/notes.ts`, so there's one source of truth for business logic
 - Responsive layout down to mobile, light/dark theme (follows system preference, toggle persists to `localStorage`)
@@ -75,7 +75,11 @@ Everything here is free to run:
 
 ## Environment variables
 
-See `.env.example` for the full list. In short: `DATABASE_URL` (Postgres connection string), `SESSION_SECRET` (32+ random bytes, signs the admin session cookie), `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH` (the single admin account, hash generated with `npm run auth:hash`), and `NEXT_PUBLIC_SITE_URL`.
+See `.env.example` for the full list, with inline examples for every value. In short: `DATABASE_URL` (Postgres connection string — note the host differs between local dev and Docker Compose, see the comment there), `SESSION_SECRET` (32+ random bytes, signs the admin session cookie), `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH` (the single admin account, hash generated with `npm run auth:hash`), `ATTACHMENTS_DIR` + `MAX_ATTACHMENT_SIZE_MB` (upload storage), and `NEXT_PUBLIC_SITE_URL`.
+
+### A note on package-lock.json
+
+This repo does not currently ship a committed `package-lock.json` (it was built in a network-restricted environment that couldn't reach the npm registry). `npm install`/`Dockerfile`/CI all use `npm install` rather than `npm ci` as a result. Once you have registry access, run `npm install` and commit the resulting lockfile — then switch `Dockerfile` and `.github/workflows/ci.yml` back to `npm ci` (both call it out where relevant) for faster, fully reproducible installs.
 
 ## Auth model
 
@@ -116,9 +120,11 @@ src/
 
 Versioned under `/api/v1`, JSON in and out:
 
-- `GET /api/v1/notes?q=&type=&sort=&limit=` — search (full-text) or, without `q`, most recently updated; `&lite=1` returns `{slug,title,type}` only (used by the command palette)
+- `GET /api/v1/notes?q=&type=&sort=&limit=&offset=` — search (full-text, paginated) or, without `q`, most recently updated; `&lite=1` returns `{slug,title,type}` only (used by the command palette)
 - `GET /api/v1/notes/:slug`, `PATCH` (auth), `DELETE` (auth)
 - `POST /api/v1/notes` (auth) — create
+- `GET /api/v1/notes/:slug/attachments`, `POST` (auth, multipart `file` field)
+- `DELETE /api/v1/attachments/:id` (auth); `GET /api/v1/attachments/:key` serves the file itself (public, same visibility rule as the note)
 - `GET /api/v1/domains`, `GET /api/v1/tags`
 - `GET /api/v1/graph?scope=neighbours|domain|all&focus=:slug`
 - `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`
@@ -139,7 +145,8 @@ Flagged rather than guessed at, per the original design brief:
 
 - Knowledge maturity states (Captured → Draft → Verified) were explicitly skipped — freshness is carried by the "Updated" stamp and the dashboard's "Needs finishing" queue instead.
 - Multi-user permissions beyond single-admin.
-- Attachment storage backend (the `Attachment` table stores a `url` today; wiring up local disk vs. an S3-compatible bucket is a follow-up, not blocking MVP 1).
+- Attachment storage defaults to local disk (`src/lib/storage.ts`) behind a small interface — swapping in an S3-compatible bucket later means changing that one file, not the API or UI.
+- Domain/tag listing pages (`/d/:domain`, `/t/:tag`) aren't paginated yet — only the search page is. Fine at personal-knowledge-base scale; worth revisiting if a single domain grows into the hundreds of notes.
 - Semantic/vector search, AI features, flashcards/spaced repetition, browser extension, CLI, import/export — intentionally deferred (see the project memory doc); the REST API and modular service layer exist so none of these require a rewrite later.
 
 ## License

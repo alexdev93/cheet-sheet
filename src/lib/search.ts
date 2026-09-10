@@ -61,8 +61,9 @@ export async function searchNotes(opts: {
   type?: NoteType | "ALL";
   sort?: SearchSort;
   limit?: number;
+  offset?: number;
 }): Promise<SearchHit[]> {
-  const { query, type = "ALL", sort = "relevance", limit = 40 } = opts;
+  const { query, type = "ALL", sort = "relevance", limit = 40, offset = 0 } = opts;
   const q = query.trim();
   if (!q) return [];
 
@@ -80,6 +81,7 @@ export async function searchNotes(opts: {
     type !== "ALL" ? Prisma.sql`AND n.type = ${type}::"NoteType"` : Prisma.empty;
 
   const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(limit, 200)) : 40;
+  const safeOffset = Number.isFinite(offset) ? Math.max(0, offset) : 0;
 
   const rows = await db.$queryRaw<
     Array<{
@@ -110,6 +112,7 @@ export async function searchNotes(opts: {
       ${typeFilter}
     ORDER BY ${orderBy}
     LIMIT ${safeLimit}
+    OFFSET ${safeOffset}
   `);
 
   return rows;

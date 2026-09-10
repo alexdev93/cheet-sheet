@@ -11,26 +11,35 @@ export const metadata: Metadata = { title: "Search" };
 
 const TYPES: (NoteType | "ALL")[] = ["ALL", "COMMAND", "PROCEDURE", "TROUBLESHOOTING", "REFERENCE", "PATH", "NOTE"];
 const SORTS: SearchSort[] = ["relevance", "most-used", "recent"];
+const PAGE_SIZE = 20;
 
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; type?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; type?: string; sort?: string; p?: string }>;
 }) {
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
   const type = parseTypeFilter(params.type);
   const sort: SearchSort = parseSort(params.sort);
+  const page = Math.max(1, Number(params.p) || 1);
 
+  // allHits (capped at 200) exists purely to compute per-type counts for the
+  // filter chips — the actual page of results comes from a second, offset
+  // query so results.length stays small regardless of how many notes match.
   const [allHits, results] = q
     ? await Promise.all([
         searchNotes({ query: q, type: "ALL", sort: "relevance", limit: 200 }),
-        searchNotes({ query: q, type, sort, limit: 60 }),
+        searchNotes({ query: q, type, sort, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
       ])
     : [[], []];
 
   const counts = new Map<string, number>();
   for (const hit of allHits) counts.set(hit.type, (counts.get(hit.type) ?? 0) + 1);
+
+  const totalForType = type === "ALL" ? allHits.length : (counts.get(type) ?? 0);
+  const totalPages = Math.max(1, Math.ceil(totalForType / PAGE_SIZE));
+  const pageHref = (p: number) => `/search?q=${encodeURIComponent(q)}&type=${type}&sort=${sort}&p=${p}`;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -38,7 +47,7 @@ export default async function SearchPage({
         <div className="flex items-baseline gap-3 mb-1">
           <h1 className="text-[22px]">{q ? `Results for “${q}”` : "Search knowledge"}</h1>
           <span className="font-mono text-xs text-[var(--color-muted)]">
-            {q ? `${results.length} of ${allHits.length} matches` : "type to search — try “docker clean”"}
+            {q ? `${totalForType} match${totalForType === 1 ? "" : "es"}` : "type to search — try “docker clean”"}
           </span>
         </div>
 
@@ -124,6 +133,28 @@ export default async function SearchPage({
                 </div>
               </Link>
             ))}
+
+            {q && results.length > 0 && totalPages > 1 ? (
+              <div className="flex items-center justify-between pt-4">
+                {page > 1 ? (
+                  <Link href={pageHref(page - 1)} className="font-mono text-[11px] font-bold text-[var(--color-text-2)] border border-[var(--color-border-strong)] px-3 py-1.5 no-underline hover:border-accent hover:text-accent">
+                    ← PREV
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                <span className="font-mono text-[11px] text-[var(--color-muted)]">
+                  Page {page} of {totalPages}
+                </span>
+                {page < totalPages ? (
+                  <Link href={pageHref(page + 1)} className="font-mono text-[11px] font-bold text-[var(--color-text-2)] border border-[var(--color-border-strong)] px-3 py-1.5 no-underline hover:border-accent hover:text-accent">
+                    NEXT →
+                  </Link>
+                ) : (
+                  <span />
+                )}
+              </div>
+            ) : null}
 
             {q && results.length === 0 ? (
               <div className="pt-11 max-w-[520px]">

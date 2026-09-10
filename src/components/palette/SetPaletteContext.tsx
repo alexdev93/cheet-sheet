@@ -3,14 +3,14 @@
 import { useEffect } from "react";
 import { usePalette } from "@/components/palette/PaletteProvider";
 
-/** Drops a server-rendered page's title into the palette's "in context: …" line. Renders nothing. */
-export function SetPaletteContext({ title }: { title: string | null }) {
-  const { setContextTitle } = usePalette();
+/** Drops a server-rendered note's slug/title into the palette's context. Renders nothing. */
+export function SetPaletteContext({ slug, title }: { slug: string; title: string }) {
+  const { setNoteContext } = usePalette();
 
   useEffect(() => {
-    setContextTitle(title);
-    return () => setContextTitle(null);
-  }, [title, setContextTitle]);
+    setNoteContext({ slug, title });
+    return () => setNoteContext(null);
+  }, [slug, title, setNoteContext]);
 
   return null;
 }

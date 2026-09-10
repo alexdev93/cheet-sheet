@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { getNoteBySlug } from "@/server/notes";
 import { NoteHeader } from "@/components/note/NoteHeader";
 import { Section } from "@/components/note/Section";
+import { Attachments } from "@/components/note/Attachments";
 import { RightRail } from "@/components/note/RightRail";
 import { SetPaletteContext } from "@/components/palette/SetPaletteContext";
 
@@ -22,7 +23,7 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
 
   return (
     <div className="flex-1 flex min-h-0">
-      <SetPaletteContext title={note.title} />
+      <SetPaletteContext slug={note.slug} title={note.title} />
       <div className="flex-1 min-w-0 overflow-y-auto">
         <div className="max-w-[780px] px-6 sm:px-10 py-6 pb-20 mx-auto lg:mx-0">
           <NoteHeader note={note} canEdit={!!session} />
@@ -30,6 +31,7 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
             {note.sections.map((s) => (
               <Section key={s.id} section={s} noteSlug={note.slug} />
             ))}
+            <Attachments attachments={note.attachments} />
           </div>
         </div>
       </div>

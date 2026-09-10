@@ -7,7 +7,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 // boundary, but it always runs on the Node.js runtime now, not edge.)
 const PROTECTED_PAGE_PREFIXES = ["/capture"];
 const PROTECTED_EDIT_SUFFIX = "/edit";
-const PROTECTED_API_PREFIXES = ["/api/v1/notes", "/api/v1/domains", "/api/v1/collections", "/api/v1/tags", "/api/v1/links"];
+const PROTECTED_API_PREFIXES = ["/api/v1/notes", "/api/v1/domains", "/api/v1/collections", "/api/v1/tags", "/api/v1/links", "/api/v1/attachments"];
 const MUTATING_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
 function isProtectedPage(pathname: string) {

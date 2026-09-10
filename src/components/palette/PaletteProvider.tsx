@@ -2,19 +2,21 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
+export type PaletteNoteContext = { slug: string; title: string } | null;
+
 type PaletteContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
   toggle: () => void;
-  contextTitle: string | null;
-  setContextTitle: (title: string | null) => void;
+  noteContext: PaletteNoteContext;
+  setNoteContext: (context: PaletteNoteContext) => void;
 };
 
 const PaletteContext = createContext<PaletteContextValue | null>(null);
 
 export function PaletteProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [contextTitle, setContextTitle] = useState<string | null>(null);
+  const [noteContext, setNoteContext] = useState<PaletteNoteContext>(null);
   const toggle = useCallback(() => setOpen((o) => !o), []);
 
   useEffect(() => {
@@ -31,8 +33,8 @@ export function PaletteProvider({ children }: { children: React.ReactNode }) {
   }, [toggle]);
 
   const value = useMemo(
-    () => ({ open, setOpen, toggle, contextTitle, setContextTitle }),
-    [open, toggle, contextTitle]
+    () => ({ open, setOpen, toggle, noteContext, setNoteContext }),
+    [open, toggle, noteContext]
   );
   return <PaletteContext.Provider value={value}>{children}</PaletteContext.Provider>;
 }
