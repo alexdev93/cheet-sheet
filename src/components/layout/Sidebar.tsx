@@ -16,7 +16,7 @@ export function Sidebar({
   noteCount: number;
 }) {
   const pathname = usePathname();
-  const activeSlug = pathname?.startsWith("/n/") ? pathname.split("/")[2] : null;
+  const activeSlug = pathname?.startsWith("/n/") ? pathname.split("/")[2] ?? null : null;
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(tree.map((d) => [d.id, true]))
   );
