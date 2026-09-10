@@ -8,7 +8,7 @@
 #   - "runner":  the final, slim `output: "standalone"` image the `app`
 #     service actually runs — it never needs the Prisma CLI at all.
 
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 # Uses `npm install` rather than `npm ci` because no package-lock.json is
@@ -17,7 +17,7 @@ COPY package.json package-lock.json* ./
 # faster installs).
 RUN npm install
 
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -30,7 +30,7 @@ ENV SESSION_SECRET="build-time-placeholder-not-used-at-runtime"
 RUN npx prisma generate
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs

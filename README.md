@@ -33,7 +33,7 @@ Everything in this repo runs on free, open-source software end to end: Next.js, 
 
 ## Getting started (local, without Docker)
 
-Requires Node.js 20.9+ and a PostgreSQL 14+ instance.
+Requires Node.js 24+ (Prisma 7 needs 20.19+/22.12+/24.0+; Node 20 itself reached end-of-life in April 2026, so this repo standardizes on 24, the current Active LTS — see `.nvmrc`) and a PostgreSQL 14+ instance.
 
 ```bash
 npm install                      # also runs `prisma generate` via postinstall

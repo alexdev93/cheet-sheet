@@ -44,7 +44,7 @@
     "@testing-library/react": "^16.1.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/d3-force": "^3.0.10",
-    "@types/node": "^22.10.2",
+    "@types/node": "^24.0.0",
     "@types/pg": "^8.11.10",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
@@ -60,6 +60,6 @@
     "vitest": "^2.1.8"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=24.0.0"
   }
 }
