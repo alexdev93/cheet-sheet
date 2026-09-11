@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getNoteBySlug } from "@/server/notes";
-import { NoteHeader } from "@/components/note/NoteHeader";
-import { Section } from "@/components/note/Section";
-import { Attachments } from "@/components/note/Attachments";
+import { getNoteBySlug, listAllTags } from "@/server/notes";
+import { listDomainOptions } from "@/server/tree";
+import { db } from "@/lib/db";
+import { NoteDetailView } from "@/components/note/NoteDetailView";
 import { RightRail } from "@/components/note/RightRail";
 import { SetPaletteContext } from "@/components/palette/SetPaletteContext";
 
@@ -21,18 +21,33 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
   const note = await getNoteBySlug(slug, { includeUnpublished: !!session });
   if (!note) notFound();
 
+  const canEdit = !!session;
+  let domainOptions: { name: string; collections: { name: string }[] }[] = [];
+  let noteOptions: { slug: string; title: string }[] = [];
+  let tagSuggestions: string[] = [];
+  if (canEdit) {
+    const [domains, tags, notes] = await Promise.all([
+      listDomainOptions(),
+      listAllTags(),
+      db.note.findMany({ where: { slug: { not: slug } }, select: { slug: true, title: true }, orderBy: { title: "asc" } }),
+    ]);
+    domainOptions = domains.map((d) => ({ name: d.name, collections: d.collections }));
+    tagSuggestions = tags.map((t) => t.name);
+    noteOptions = notes;
+  }
+
   return (
     <div className="flex-1 flex min-h-0">
       <SetPaletteContext slug={note.slug} title={note.title} />
       <div className="flex-1 min-w-0 overflow-y-auto">
         <div className="max-w-[780px] px-6 sm:px-10 py-6 pb-20 mx-auto lg:mx-0">
-          <NoteHeader note={note} canEdit={!!session} />
-          <div className="mt-6">
-            {note.sections.map((s) => (
-              <Section key={s.id} section={s} noteSlug={note.slug} />
-            ))}
-            <Attachments attachments={note.attachments} />
-          </div>
+          <NoteDetailView
+            note={note}
+            canEdit={canEdit}
+            domainOptions={domainOptions}
+            noteOptions={noteOptions}
+            tagSuggestions={tagSuggestions}
+          />
         </div>
       </div>
       <RightRail note={note} />

@@ -29,11 +29,20 @@ export function NoteEditForm({
   domainOptions,
   noteOptions,
   tagSuggestions,
+  onSaved,
+  onCancel,
 }: {
   note: NoteDetail | null;
   domainOptions: { name: string; collections: { name: string }[] }[];
   noteOptions: { slug: string; title: string }[];
   tagSuggestions: string[];
+  /** When editing an existing note and the slug didn't change, called
+   * instead of navigating — lets the caller drop back into a read view
+   * in place rather than routing to /n/[slug]. Ignored for a new note,
+   * and skipped if the save changed the slug (the URL has to follow). */
+  onSaved?: () => void;
+  /** Renders a CANCEL button next to SAVE that backs out without saving. */
+  onCancel?: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -119,7 +128,11 @@ export function NoteEditForm({
     startTransition(async () => {
       try {
         const result = note ? await updateNoteAction(note.slug, payload) : await createNoteAction(payload);
-        router.push(`/n/${result.slug}`);
+        if (note && onSaved && result.slug === note.slug) {
+          onSaved();
+        } else {
+          router.push(`/n/${result.slug}`);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not save the note.");
       }
@@ -348,6 +361,16 @@ export function NoteEditForm({
         >
           {pending ? "SAVING…" : "SAVE NOTE"}
         </button>
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={pending}
+            className="h-9 px-4 bg-transparent border border-[var(--color-border-strong)] text-[var(--color-text-2)] font-sans font-bold text-xs disabled:opacity-50 hover:border-accent hover:text-accent"
+          >
+            CANCEL
+          </button>
+        ) : null}
       </div>
     </form>
   );

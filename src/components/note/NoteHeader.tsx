@@ -4,7 +4,17 @@ import { FavoriteButton } from "@/components/note/FavoriteButton";
 import { relativeTime } from "@/lib/format";
 import type { NoteDetail } from "@/types/note";
 
-export function NoteHeader({ note, canEdit }: { note: NoteDetail; canEdit: boolean }) {
+export function NoteHeader({
+  note,
+  canEdit,
+  onEditClick,
+}: {
+  note: NoteDetail;
+  canEdit: boolean;
+  /** When provided, EDIT switches the detail page into inline edit mode
+   * instead of navigating to the separate /edit route. */
+  onEditClick?: () => void;
+}) {
   return (
     <div className="mb-6">
       <div className="flex items-center gap-1.5 font-mono text-[11.5px] text-[var(--color-muted)] mb-4">
@@ -35,12 +45,22 @@ export function NoteHeader({ note, canEdit }: { note: NoteDetail; canEdit: boole
         <span className="flex-1 hidden sm:block" />
         <FavoriteButton slug={note.slug} initial={note.favorite} canEdit={canEdit} />
         {canEdit ? (
-          <Link
-            href={`/n/${note.slug}/edit`}
-            className="font-sans font-bold text-[10px] tracking-[0.06em] text-[var(--color-text-3)] border border-[var(--color-border-strong)] px-2 py-1.5 no-underline hover:border-accent hover:text-accent"
-          >
-            EDIT
-          </Link>
+          onEditClick ? (
+            <button
+              type="button"
+              onClick={onEditClick}
+              className="font-sans font-bold text-[10px] tracking-[0.06em] text-[var(--color-text-3)] border border-[var(--color-border-strong)] px-2 py-1.5 cursor-pointer bg-transparent hover:border-accent hover:text-accent"
+            >
+              EDIT
+            </button>
+          ) : (
+            <Link
+              href={`/n/${note.slug}/edit`}
+              className="font-sans font-bold text-[10px] tracking-[0.06em] text-[var(--color-text-3)] border border-[var(--color-border-strong)] px-2 py-1.5 no-underline hover:border-accent hover:text-accent"
+            >
+              EDIT
+            </Link>
+          )
         ) : null}
       </div>
 
