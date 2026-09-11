@@ -10,10 +10,14 @@ export function Sidebar({
   tree,
   recent,
   noteCount,
+  variant = "desktop",
 }: {
   tree: TreeDomain[];
   recent: NoteSummary[];
   noteCount: number;
+  /** "drawer" drops the fixed width and md-only visibility so this can be
+   * reused as-is inside the mobile nav drawer. */
+  variant?: "desktop" | "drawer";
 }) {
   const pathname = usePathname();
   const activeSlug = pathname?.startsWith("/n/") ? pathname.split("/")[2] ?? null : null;
@@ -25,8 +29,13 @@ export function Sidebar({
     setExpanded((e) => ({ ...e, [id]: !e[id] }));
   }
 
+  const wrapperClass =
+    variant === "drawer"
+      ? "w-full flex-none flex flex-col min-h-0 bg-[var(--color-panel-2)]"
+      : "w-[274px] flex-none border-r border-[var(--color-border)] bg-[var(--color-panel-2)] flex-col min-h-0 hidden md:flex";
+
   return (
-    <div className="w-[274px] flex-none border-r border-[var(--color-border)] bg-[var(--color-panel-2)] flex-col min-h-0 hidden md:flex">
+    <div className={wrapperClass}>
       <div className="h-[34px] flex-none flex items-center justify-between px-3 border-b border-[var(--color-border)]">
         <span className="font-sans font-bold text-[10px] tracking-[0.12em] text-[var(--color-text-3)]">BROWSE</span>
         <span className="font-mono text-[10px] text-[var(--color-muted-2)]">{noteCount} notes</span>

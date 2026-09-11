@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const MODES = [
+export const MODES = [
   { href: "/", glyph: "⌂", label: "Browse", exact: true },
   { href: "/search", glyph: "◐", label: "Search", exact: false },
   { href: "/graph", glyph: "◎", label: "Explore", exact: false },

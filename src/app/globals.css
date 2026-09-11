@@ -23,6 +23,7 @@
 
   --radius-none: 0px;
   --animate-kmc-in: kmc-in 0.12s ease-out;
+  --animate-kmc-slide-in: kmc-slide-in 0.16s ease-out;
 
   @keyframes kmc-in {
     from {
@@ -32,6 +33,15 @@
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+
+  @keyframes kmc-slide-in {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
     }
   }
 }

@@ -22,11 +22,13 @@ export default async function HistoryPage() {
                 href={`/n/${v.note.slug}`}
                 className="flex items-center gap-4 py-3 border-b border-[var(--color-border)] no-underline hover:bg-[var(--color-panel-2)]"
               >
-                <span className="font-mono text-[11px] text-[var(--color-muted-2)] w-20 flex-none">
+                <span className="font-mono text-[11px] text-[var(--color-muted-2)] w-14 sm:w-20 flex-none">
                   {relativeTime(v.createdAt)}
                 </span>
-                <span className="flex-1 text-sm text-[var(--color-text-2)] truncate">{v.summary}</span>
-                <span className="font-mono text-[11px] text-[var(--color-muted)]">{v.note.title}</span>
+                <span className="flex-1 min-w-0 text-sm text-[var(--color-text-2)] truncate">{v.summary}</span>
+                <span className="font-mono text-[11px] text-[var(--color-muted)] flex-none max-w-[35%] truncate">
+                  {v.note.title}
+                </span>
               </Link>
             ))}
           </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { usePalette } from "@/components/palette/PaletteProvider";
+import { useMobileNav } from "@/components/layout/MobileNavProvider";
 import { toggleTheme } from "@/lib/theme";
 import { logoutAction } from "@/server/auth-actions";
 import { NOTE_TYPE_LABELS } from "@/lib/detect";
@@ -14,6 +15,7 @@ type LiteNote = { slug: string; title: string; type: NoteType };
 export function TopBar({ authed }: { authed: boolean }) {
   const router = useRouter();
   const { toggle } = usePalette();
+  const { toggle: toggleMobileNav } = useMobileNav();
   const [q, setQ] = useState("");
   const [suggestions, setSuggestions] = useState<LiteNote[]>([]);
   const [open, setOpen] = useState(false);
@@ -68,10 +70,19 @@ export function TopBar({ authed }: { authed: boolean }) {
   }
 
   return (
-    <header className="h-[52px] flex-none flex items-center gap-3.5 px-3.5 border-b border-[var(--color-border)] bg-[var(--color-panel)]">
+    <header className="h-[52px] flex-none flex items-center gap-2.5 sm:gap-3.5 px-2.5 sm:px-3.5 border-b border-[var(--color-border)] bg-[var(--color-panel)]">
+      <button
+        type="button"
+        onClick={toggleMobileNav}
+        aria-label="Open menu"
+        className="md:hidden w-9 h-9 flex-none flex items-center justify-center bg-transparent border-0 cursor-pointer text-[var(--color-text-2)] font-mono text-base"
+      >
+        ☰
+      </button>
+
       <Link href="/" className="flex items-center gap-2 no-underline">
-        <span className="block w-[22px] h-[22px] bg-accent" />
-        <span className="font-sans font-extrabold text-sm tracking-[-0.01em] text-[var(--color-text)]">
+        <span className="block w-[22px] h-[22px] flex-none bg-accent" />
+        <span className="hidden min-[380px]:inline font-sans font-extrabold text-sm tracking-[-0.01em] text-[var(--color-text)] whitespace-nowrap">
           memory<span className="text-[var(--color-muted)]">/center</span>
         </span>
       </Link>

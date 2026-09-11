@@ -21,7 +21,7 @@ export function NoteHeader({ note, canEdit }: { note: NoteDetail; canEdit: boole
         <span className="text-[var(--color-text-2)]">{note.title}</span>
       </div>
 
-      <div className="flex items-center gap-2.5 mb-2.5">
+      <div className="flex items-center flex-wrap gap-2.5 mb-2.5">
         <TypeBadge type={note.type} />
         <span className="font-mono text-[11.5px] text-[var(--color-muted)]">
           Updated {relativeTime(note.updatedAt)}
@@ -32,7 +32,7 @@ export function NoteHeader({ note, canEdit }: { note: NoteDetail; canEdit: boole
             {note.status.toLowerCase()}
           </span>
         ) : null}
-        <span className="flex-1" />
+        <span className="flex-1 hidden sm:block" />
         <FavoriteButton slug={note.slug} initial={note.favorite} canEdit={canEdit} />
         {canEdit ? (
           <Link

@@ -4,6 +4,8 @@ import { listRecentNotes } from "@/server/notes";
 import { TopBar } from "@/components/layout/TopBar";
 import { ModeRail } from "@/components/layout/ModeRail";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileNavProvider } from "@/components/layout/MobileNavProvider";
+import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
 import { PaletteProvider } from "@/components/palette/PaletteProvider";
 import { CommandPalette } from "@/components/palette/CommandPalette";
 
@@ -23,14 +25,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <PaletteProvider>
-      <div className="h-dvh flex flex-col bg-[var(--color-bg)]">
-        <TopBar authed={!!session} />
-        <div className="flex-1 flex min-h-0">
-          <ModeRail />
-          <Sidebar tree={tree} recent={recent} noteCount={noteCount} />
-          <main className="flex-1 min-w-0 flex flex-col bg-[var(--color-bg)]">{children}</main>
+      <MobileNavProvider>
+        <div className="h-dvh flex flex-col bg-[var(--color-bg)]">
+          <TopBar authed={!!session} />
+          <div className="flex-1 flex min-h-0">
+            <ModeRail />
+            <Sidebar tree={tree} recent={recent} noteCount={noteCount} />
+            <main className="flex-1 min-w-0 flex flex-col bg-[var(--color-bg)]">{children}</main>
+          </div>
         </div>
-      </div>
+        <MobileNavDrawer authed={!!session} tree={tree} recent={recent} noteCount={noteCount} />
+      </MobileNavProvider>
       <CommandPalette />
     </PaletteProvider>
   );
