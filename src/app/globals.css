@@ -2,6 +2,12 @@
 @import "../styles/tokens.css";
 
 @theme inline {
+  /* Media features can't reference custom properties, so this needs a
+     literal value even inside an "inline" theme block — used to keep the
+     wordmark text off the very smallest phones without hiding it on
+     everything sm: (640px) would. */
+  --breakpoint-xs: 380px;
+
   --color-bg: var(--color-bg);
   --color-panel: var(--color-panel);
   --color-panel-2: var(--color-panel-2);

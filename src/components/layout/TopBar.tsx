@@ -75,14 +75,16 @@ export function TopBar({ authed }: { authed: boolean }) {
         type="button"
         onClick={toggleMobileNav}
         aria-label="Open menu"
-        className="md:hidden w-9 h-9 flex-none flex items-center justify-center bg-transparent border-0 cursor-pointer text-[var(--color-text-2)] font-mono text-base"
+        className="md:hidden w-9 h-9 flex-none flex items-center justify-center bg-transparent border-0 cursor-pointer text-[var(--color-text-2)]"
       >
-        ☰
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none" aria-hidden="true">
+          <path d="M0 1h18M0 7h18M0 13h18" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
       </button>
 
       <Link href="/" className="flex items-center gap-2 no-underline">
         <span className="block w-[22px] h-[22px] flex-none bg-accent" />
-        <span className="hidden min-[380px]:inline font-sans font-extrabold text-sm tracking-[-0.01em] text-[var(--color-text)] whitespace-nowrap">
+        <span className="hidden xs:inline font-sans font-extrabold text-sm tracking-[-0.01em] text-[var(--color-text)] whitespace-nowrap">
           memory<span className="text-[var(--color-muted)]">/center</span>
         </span>
       </Link>
